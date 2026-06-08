@@ -8,6 +8,9 @@ DerivedData/
 # Generated icon output (regenerate from the master via generate_icns.sh)
 design_handoff_app_icon/build/
 
+# Packaging output (.app / .dmg) — distributed via GitHub Releases, not git
+dist/
+
 # Reference sources (cloned, not part of this project)
 reference/
 
