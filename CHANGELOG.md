@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.2 — 2026-06-09
+
+Crash fix: launch failure on macOS 27.
+
+- Fixed an immediate crash on launch under macOS 26/27 (`EXC_BREAKPOINT` in
+  `Bundle.module`). The SwiftPM resource bundle is a flat folder with no
+  `Info.plist`; macOS 27's stricter bundle validation rejects it, so SwiftPM's
+  generated `Bundle.module` accessor hit its `fatalError`.
+- The app icon is now resolved via the main bundle (with a dev-run fallback),
+  removing all dependence on `Bundle.module`. Thanks to @colaH16 (#1).
+
 ## v1.0.1 — 2026-06-09
 
 Bug fix: memory-bandwidth Media Engine reporting.

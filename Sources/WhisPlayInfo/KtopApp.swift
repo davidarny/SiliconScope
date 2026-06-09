@@ -1,13 +1,16 @@
 //
 //  File:      KtopApp.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-08
+//  Updated:   2026-06-09
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  App entry point. Shows a full dashboard Window and a MenuBarExtra,
 //             both backed by one shared KtopMonitor.
-//  Notes:     Runs as an SPM executable (xcrun swift run ktop-app); activation policy
-//             is set to .regular at runtime so the window + Dock icon appear without a
-//             bundled Info.plist. A proper .app bundle comes in the packaging step.
+//  Notes:     Runs as an SPM executable (xcrun swift run WhisPlayInfo); activation
+//             policy is set to .regular at runtime so the window + Dock icon appear
+//             without a bundled Info.plist. A proper .app bundle comes in packaging.
+//             Icon is loaded via loadAppIcon() — never SwiftPM's Bundle.module, whose
+//             generated accessor fatalErrors when the flat resource bundle is not a
+//             valid bundle (crashes on macOS 27's stricter bundle validation).
 //
 import SwiftUI
 import AppKit
@@ -22,8 +25,7 @@ struct KtopApp: App {
                 .frame(minWidth: 756, minHeight: 760)
                 .onAppear {
                     NSApplication.shared.setActivationPolicy(.regular)
-                    if let url = Bundle.module.url(forResource: "AppIcon", withExtension: "icns"),
-                       let icon = NSImage(contentsOf: url) {
+                    if let icon = Self.loadAppIcon() {
                         NSApplication.shared.applicationIconImage = icon
                     }
                     NSApplication.shared.activate(ignoringOtherApps: true)
@@ -42,5 +44,24 @@ struct KtopApp: App {
         Settings {
             SettingsView()
         }
+    }
+
+    /// Resolves the app icon without ever touching SwiftPM's `Bundle.module`.
+    /// `Bundle.module`'s generated accessor calls `fatalError` when its resource
+    /// bundle is not recognized as a bundle; the SwiftPM bundle is a flat folder
+    /// with no Info.plist, which macOS 27's stricter validation rejects -> crash.
+    private static func loadAppIcon() -> NSImage? {
+        // Packaged .app: AppIcon.icns sits directly in Contents/Resources.
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: url) {
+            return icon
+        }
+        // Dev run (`swift run`): it lives inside the SwiftPM resource bundle next to
+        // the executable. Resolve the path by hand so we never invoke Bundle.module.
+        for base in [Bundle.main.resourceURL, Bundle.main.bundleURL].compactMap({ $0 }) {
+            let url = base.appendingPathComponent("ktop_WhisPlayInfo.bundle/AppIcon.icns")
+            if let icon = NSImage(contentsOf: url) { return icon }
+        }
+        return nil
     }
 }
