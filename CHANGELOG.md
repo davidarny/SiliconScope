@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.3.0 — 2026-06-15
+
+Local-AI monitoring — a dedicated cockpit for people running LLMs on Apple Silicon.
+
+- **AI runtime detection** — recognizes Ollama, llama.cpp, LM Studio, MLX, Jan, GPT4All,
+  and vLLM by process (bundle-first matching, sudoless) and surfaces the active runtime
+  with its RAM / CPU.
+- **Model memory budget** — "largest model that fits now" + "if you unload <model>" (per
+  quant), with a rate-based swap/compression risk signal that warns *before* tokens/sec
+  collapse (not the static used%).
+- **Runtime API (opt-in, off by default)** — reads the loaded model, the authoritative
+  GPU/CPU offload split (Ollama `size_vram/size`), and tokens/sec (llama.cpp `/metrics`)
+  from `127.0.0.1`. Nothing leaves your Mac. Settings → "Connect to local AI runtimes".
+- **AI Workload classifier** retuned against real M1 Max LLM runs (bandwidth-bound at the
+  ~50%-of-theoretical regime real decode actually hits) and stabilized with a rolling
+  average so the verdict no longer flickers.
+- Menu bar gains AI runtime + model-budget lines; `sscope-cli --ai` one-shot probe.
+
+Design + validation: [`docs/ai-local-features-design.md`](docs/ai-local-features-design.md).
+The classifier was calibrated against MoE, dense, and memory-pressured runs on an M1 Max.
+
 ## v1.2.0 — 2026-06-14
 
 AI-workload monitoring — the next-version hero feature.
