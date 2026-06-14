@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.2.0 — 2026-06-14
 
 AI-workload monitoring — the next-version hero feature.
 
@@ -13,6 +13,8 @@ AI-workload monitoring — the next-version hero feature.
 - **GPU throttle detector** — flags the GPU clock held below its slowly-decaying rolling
   peak while thermal pressure has risen (warning banner + menu-bar flame).
 - **Compact GPU menu-bar mode** — single line: GPU% / GPU W / GPU GB/s / die °C.
+
+Thanks to @durul for contributing this feature (#2).
 
 ## v1.1.0 — 2026-06-14
 
