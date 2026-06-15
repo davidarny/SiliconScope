@@ -12,13 +12,13 @@ tracking that terminal monitors and Activity Monitor don't surface.
 Born from wanting to *see* exactly how on-device AI and media workloads drive the
 Apple Silicon accelerators — hence the focus on ANE / Media / bandwidth.
 
-![SiliconScope dashboard](docs/img/screenshot.png)
+![SiliconScope catching a GPU thermal throttle under a local-LLM load](docs/img/screenshot.png)
 
-*Live local LLM (LM Studio): detected runtime, loaded model, GPU/CPU offload split, and the memory budget.*
+*A sustained on-device LLM (MLX-Swift) pinning the GPU — SiliconScope catches the thermal throttle (banner + the menu-bar glyph blinks red), shows the per-engine trends, and attributes it honestly as `in-app / unmanaged` (no managed runtime serving a model).*
 
-![SiliconScope catching memory pressure](docs/img/screenshot-2.png)
+![SiliconScope dashboard and menu-bar cockpit](docs/img/screenshot-2.png)
 
-*A 31B model overflowing unified memory — the budget flips to `swapping` and the memory-pressure banner fires before tokens/sec collapse.*
+*The full dashboard plus the menu-bar cockpit: a live 6-bar glyph (CPU / GPU / ANE / Media / memory / bandwidth) and six color-matched per-engine trend graphs — each on a fixed axis so a small signal reads small.*
 
 ## Install
 
