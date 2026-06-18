@@ -39,8 +39,9 @@ public struct BenchmarkRecord: Sendable, Equatable, Codable, Identifiable {
     public let avgWatts: Double        // mean SoC package power during the run
     public let timestamp: Date
 
-    /// Efficiency: tokens per joule (tok/s ÷ W). Small numbers (~0.3–1.0 on Apple Silicon).
-    public var tokensPerJoule: Double { avgWatts > 0 ? tokensPerSec / avgWatts : 0 }
+    /// Efficiency in tokens per watt-hour (the familiar battery unit): tok/s ÷ W × 3600.
+    /// E.g. ~4,800 tok/Wh ⇒ a 70 Wh MacBook battery ≈ 340k tokens on a full charge.
+    public var tokensPerWattHour: Double { avgWatts > 0 ? tokensPerSec / avgWatts * 3600 : 0 }
     public var id: String { "\(runtime)|\(model)|\(timestamp.timeIntervalSince1970)" }
 
     public init(model: String, runtime: String, chip: String,

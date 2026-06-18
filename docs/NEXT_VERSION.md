@@ -45,7 +45,7 @@ tool. Validation came from real M1 Max runs (MoE 26B, dense 12B/31B).
   `/api/generate` (`eval_count`/`eval_duration`), or an OpenAI-compatible wall-clock for
   LM Studio / llama.cpp. Also `sscope-cli --bench`. (Validated: gemma4:26b ≈ 60 tok/s.)
 - **tokens-per-watt (efficiency) ✅** — mean SoC package power sampled over the benchmark
-  window (GPU-active samples only) → tok/J, shown beside tok/s. Apple Silicon's signature
+  window (GPU-active samples only) → tok/Wh, shown beside tok/s. Apple Silicon's signature
   metric, near-absent elsewhere.
 - **Per-model record ✅** (pulled forward from Tier 2) — each result is stored per
   model+runtime and shown for the loaded model. A history chart / peak-temp log is still open.

@@ -253,7 +253,7 @@ private struct AIRuntimeCard: View {
                     Image(systemName: "bolt.fill").font(.system(size: 9.5)).foregroundStyle(Theme.heat(0.3))
                     Text(String(format: "%.1f tok/s", b.tokensPerSec))
                         .font(.system(size: 10.5, weight: .medium, design: .monospaced)).foregroundStyle(Theme.text)
-                    Text(String(format: "· %.2f tok/J", b.tokensPerJoule))
+                    Text(String(format: "· %.0f tok/Wh", b.tokensPerWattHour))
                         .font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.dim)
                     Button("re-measure", action: onBenchmark)
                         .font(.system(size: 10, design: .monospaced)).buttonStyle(.plain)
