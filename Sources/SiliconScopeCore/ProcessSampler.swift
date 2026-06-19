@@ -1,7 +1,7 @@
 //
 //  File:      ProcessSampler.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-14
+//  Updated:   2026-06-19
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  Builds the process table sudolessly via libproc. Stateful: each
 //             sample() diffs cumulative CPU time against the previous call to derive
@@ -48,9 +48,12 @@ public final class ProcessSampler {
             }
 
             let path = Self.path(pid)
-            // argv only for AI-runtime candidates (gated by path basename).
+            // argv only for AI-runtime candidates (gated by path basename). Python is
+            // prefix-matched so versioned interpreters (python3.12 from conda/homebrew,
+            // python3.13, …) still qualify — that's how mlx_lm / rapid-mlx args are seen.
+            let base = Self.basename(path)
             var args: String? = nil
-            if Self.argvCandidateBasenames.contains(Self.basename(path)),
+            if Self.argvCandidateBasenames.contains(base) || base.hasPrefix("python"),
                let argv = Self.processArgs(pid), !argv.isEmpty {
                 args = argv.joined(separator: " ")
             }
