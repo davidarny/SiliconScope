@@ -153,6 +153,12 @@ final class SiliconScopeMonitor {
     private(set) var benchmarkError: String?
     private static let benchmarksKey = "benchmarkRecords"
 
+    // Threshold-alert notifications (opt-in "notificationsEnabled"): edge-triggered so a
+    // condition fires once when it starts, with a per-condition cooldown against flapping.
+    private var notifiedConditions: Set<String> = []
+    private var lastNotified: [String: Date] = [:]
+    private static let notifyCooldown: TimeInterval = 300   // 5 min per condition
+
     /// Refined memory risk: the static budget baseline plus live swap/compression rates.
     /// swapping ⇐ active swap I/O (or the static baseline); tight ⇐ compression rising
     /// while headroom is nearly gone — catches the collapse before static used% would.
@@ -194,6 +200,7 @@ final class SiliconScopeMonitor {
                 self.gpuClockPeakMHz = max(snap.gpu.freqMHz, self.gpuClockPeakMHz * Self.gpuClockPeakDecay)
                 self.updateMemoryRates(snap)
                 self.history.push(snap)
+                self.checkAlertsAndNotify()
                 let interval = UserDefaults.standard.object(forKey: "refreshInterval") as? Double ?? 1.0
                 try? await Task.sleep(for: .seconds(max(0.3, interval)))
             }
@@ -343,6 +350,36 @@ final class SiliconScopeMonitor {
         if let data = try? JSONEncoder().encode(benchmarks) {
             UserDefaults.standard.set(data, forKey: Self.benchmarksKey)
         }
+    }
+
+    // MARK: - Threshold-alert notifications
+
+    /// Posts a notification when an alert condition newly becomes active (edge-triggered),
+    /// throttled per condition so a flapping signal can't spam. Same conditions as the
+    /// menu-bar red blink: GPU thermal throttle, swapping, memory-pressure critical.
+    private func checkAlertsAndNotify() {
+        guard UserDefaults.standard.bool(forKey: "notificationsEnabled") else {
+            notifiedConditions.removeAll(); return
+        }
+        var active: [(key: String, title: String, body: String)] = []
+        if gpuThrottling {
+            active.append(("throttle", "GPU thermal throttle",
+                String(format: "GPU clock held %.0f%% below peak by heat — sustained performance limited.",
+                       gpuClockDropFraction * 100)))
+        }
+        if memoryRisk == .swapping {
+            active.append(("swap", "Memory swapping",
+                "Unified memory is full — swapping is limiting throughput."))
+        } else if snapshot.memory.pressure == .critical {
+            active.append(("mempressure", "Memory pressure: critical", "Free up memory to avoid swapping."))
+        }
+        let now = Date()
+        for a in active where !notifiedConditions.contains(a.key) {
+            if let last = lastNotified[a.key], now.timeIntervalSince(last) < Self.notifyCooldown { continue }
+            lastNotified[a.key] = now
+            Notifier.post(title: a.title, body: a.body)
+        }
+        notifiedConditions = Set(active.map(\.key))
     }
 
     /// Diffs the lifetime VM counters into pages/sec rates (guards against counter resets).

@@ -1,14 +1,15 @@
 //
 //  File:      SettingsView.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-14
+//  Updated:   2026-06-19
 //  Developer: Kennt Kim / Calida Lab
-//  Overview:  Preferences window (Cmd+,). Refresh cadence, temperature unit, and the
-//             menu-bar compact GPU mode, persisted in UserDefaults via @AppStorage.
-//  Notes:     Keys: "refreshInterval" (seconds), "temperatureFahrenheit" (Bool),
-//             "compactGPUMode" (Bool). SiliconScopeMonitor reads refreshInterval each loop;
-//             temperature views read the unit; MenuBarView reads compactGPUMode. All
-//             update live without restart.
+//  Overview:  Preferences window (Cmd+,). Refresh cadence, temperature unit, menu-bar
+//             compact GPU mode, launch-at-login, threshold alerts, and the AI runtime API
+//             — persisted in UserDefaults via @AppStorage.
+//  Notes:     Keys: "refreshInterval" (s), "temperatureFahrenheit" (Bool),
+//             "compactGPUMode" (Bool), "notificationsEnabled" (Bool). Launch-at-login is
+//             owned by SMAppService (LoginItem), not UserDefaults. SiliconScopeMonitor
+//             reads refreshInterval + notificationsEnabled each loop. All update live.
 //
 import SwiftUI
 
@@ -19,6 +20,8 @@ struct SettingsView: View {
     @AppStorage("aiRuntimeAPIEnabled") private var aiRuntimeAPIEnabled = false
     @AppStorage("aiRuntimeOllamaPort") private var ollamaPort = 11434
     @AppStorage("aiRuntimeLMStudioPort") private var lmStudioPort = 1234
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = false
+    @State private var launchAtLogin = LoginItem.isEnabled
 
     var body: some View {
         Form {
@@ -37,6 +40,17 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, on in LoginItem.setEnabled(on) }
+                Toggle("Alert notifications", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) { _, on in if on { Notifier.requestAuthorization() } }
+            } header: {
+                Text("Startup & alerts")
+            } footer: {
+                Text("Notify on GPU thermal throttle, memory pressure, or swapping (once per event).")
+            }
+
+            Section {
                 Toggle("Connect to local AI runtimes", isOn: $aiRuntimeAPIEnabled)
                 if aiRuntimeAPIEnabled {
                     TextField("Ollama port", value: $ollamaPort, format: .number.grouping(.never))
@@ -49,6 +63,6 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: aiRuntimeAPIEnabled ? 360 : 290)
+        .frame(width: 400, height: aiRuntimeAPIEnabled ? 470 : 400)
     }
 }
