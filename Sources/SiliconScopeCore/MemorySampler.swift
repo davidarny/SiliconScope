@@ -36,6 +36,13 @@ public final class MemorySampler {
             result.wiredBytes = UInt64(stats.wire_count) * pageSize
             result.activeBytes = UInt64(stats.active_count) * pageSize
             result.compressedBytes = UInt64(stats.compressor_page_count) * pageSize
+            // Activity Monitor breakdown: App Memory = internal - purgeable (anonymous, not
+            // evictable); Cached Files = external + purgeable (file-backed, reclaimable).
+            let internalPages = UInt64(stats.internal_page_count)
+            let purgeablePages = UInt64(stats.purgeable_count)
+            let externalPages = UInt64(stats.external_page_count)
+            result.appMemoryBytes = (internalPages > purgeablePages ? internalPages - purgeablePages : 0) * pageSize
+            result.cachedFilesBytes = (externalPages + purgeablePages) * pageSize
             // Cumulative lifetime counters (the monitor turns these into rates).
             result.compressions = UInt64(stats.compressions)
             result.swapins = UInt64(stats.swapins)

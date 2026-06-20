@@ -482,6 +482,11 @@ struct MEMMenuDropdown: View {
 
     var body: some View {
         let m = monitor.snapshot.memory
+        let pressureColor: Color = switch m.pressure {
+            case .normal:   Color(red: 0.34, green: 0.74, blue: 0.49)   // green
+            case .warning:  Color(red: 0.87, green: 0.66, blue: 0.28)   // amber
+            case .critical: Color(red: 0.88, green: 0.37, blue: 0.37)   // red
+        }
         VStack(alignment: .leading, spacing: 6) {
             MenuSectionHeader("Memory")
             HStack {
@@ -497,6 +502,13 @@ struct MEMMenuDropdown: View {
             MenuLegendRow(color: active, label: "Active", value: memSize(m.activeBytes))
             MenuLegendRow(color: compressed, label: "Compressed", value: memSize(m.compressedBytes))
             MenuLegendRow(color: freeC, label: "Free", value: memSize(m.freeBytes))
+
+            Divider()
+            MenuSectionHeader("Pressure")
+            MenuStackedBar(segments: [(m.pressurePercent / 100, pressureColor)])
+            MenuKV(label: "Pressure", value: String(format: "%.0f%%", m.pressurePercent), color: pressureColor)
+            MenuKV(label: "App Memory", value: memSize(m.appMemoryBytes))
+            MenuKV(label: "Cached Files", value: memSize(m.cachedFilesBytes))
 
             if m.swapTotalBytes > 0 {
                 Divider()

@@ -43,6 +43,14 @@ final class MemoryMathTests: XCTestCase {
         XCTAssertEqual(m.usedFraction, 0)
         XCTAssertEqual(m.wiredFraction, 0)
         XCTAssertEqual(m.freeFraction, 0)
+        XCTAssertEqual(m.pressurePercent, 0)
+    }
+
+    func testPressurePercentIsWiredPlusCompressed() {
+        // Matches Activity Monitor / iStat: (wired + compressed) / total.
+        var m = MemorySample()
+        m.totalBytes = gb(64); m.wiredBytes = gb(5.57); m.compressedBytes = gb(9.45)
+        XCTAssertEqual(m.pressurePercent, 23.5, accuracy: 0.2)   // (5.57+9.45)/64
     }
 
     // MARK: - MemoryBudget.estimate

@@ -21,6 +21,8 @@ public struct MemorySample: Sendable, Equatable {
     public var wiredBytes: UInt64 = 0
     public var activeBytes: UInt64 = 0
     public var compressedBytes: UInt64 = 0
+    public var appMemoryBytes: UInt64 = 0     // Activity Monitor "App Memory" = internal - purgeable
+    public var cachedFilesBytes: UInt64 = 0   // "Cached Files" = external + purgeable (evictable)
     public var swapTotalBytes: UInt64 = 0
     public var swapUsedBytes: UInt64 = 0
     public var pressure: Pressure = .normal   // macOS memory pressure level
@@ -44,10 +46,19 @@ public struct MemorySample: Sendable, Equatable {
     public var activeGB: Double { Double(activeBytes) / Self.gb }
     public var compressedGB: Double { Double(compressedBytes) / Self.gb }
     public var freeGB: Double { Double(freeBytes) / Self.gb }
+    public var appMemoryGB: Double { Double(appMemoryBytes) / Self.gb }
+    public var cachedFilesGB: Double { Double(cachedFilesBytes) / Self.gb }
     public var swapUsedGB: Double { Double(swapUsedBytes) / Self.gb }
 
     public var usedFraction: Double { totalBytes > 0 ? Double(usedBytes) / Double(totalBytes) : 0 }
     public var usedPercent: Double { usedFraction * 100 }
+
+    /// Memory pressure as a percentage — the share of RAM that can't be easily reclaimed
+    /// (wired + compressed). Matches the figure Activity Monitor / iStat show; the `pressure`
+    /// enum (from the kernel) is the authoritative green/yellow/red level.
+    public var pressurePercent: Double {
+        totalBytes > 0 ? Double(wiredBytes + compressedBytes) / Double(totalBytes) * 100 : 0
+    }
 
     // Fractions of total for a stacked bar.
     public var wiredFraction: Double { totalBytes > 0 ? Double(wiredBytes) / Double(totalBytes) : 0 }

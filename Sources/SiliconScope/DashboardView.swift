@@ -492,6 +492,14 @@ private struct MemoryBandwidthCard: View {
     private let compressedColor = Color(red: 0.62, green: 0.55, blue: 0.95)
     private let freeColor = Color.white.opacity(0.10)
 
+    private var pressureColor: Color {
+        switch memory.pressure {
+        case .normal:   return Color(red: 0.34, green: 0.74, blue: 0.49)
+        case .warning:  return Color(red: 0.87, green: 0.66, blue: 0.28)
+        case .critical: return Color(red: 0.88, green: 0.37, blue: 0.37)
+        }
+    }
+
     var body: some View {
         Card(title: "Memory & Bandwidth") {
             HStack(alignment: .top, spacing: 10) {
@@ -522,6 +530,21 @@ private struct MemoryBandwidthCard: View {
             LegendRow(color: activeColor, key: "Active", value: String(format: "%.1f GB", memory.activeGB))
             LegendRow(color: compressedColor, key: "Compressed", value: String(format: "%.1f GB", memory.compressedGB))
             LegendRow(color: freeColor, key: "Free", value: String(format: "%.1f GB", memory.freeGB))
+            HStack {
+                Text("Pressure").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
+                Spacer()
+                Text(String(format: "%.0f%%", memory.pressurePercent))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced)).foregroundStyle(pressureColor)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.06))
+                    Capsule().fill(pressureColor)
+                        .frame(width: max(2, geo.size.width * min(1, memory.pressurePercent / 100)))
+                }
+            }.frame(height: 4)
+            KV(key: "App Memory", value: String(format: "%.1f GB", memory.appMemoryGB))
+            KV(key: "Cached", value: String(format: "%.1f GB", memory.cachedFilesGB))
             KV(key: "Swap", value: String(format: "%.1f GB", memory.swapUsedGB))
             Spacer(minLength: 4)
             Sparkline(values: memHistory, color: activeColor, height: 22)
