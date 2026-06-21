@@ -105,13 +105,28 @@ func formatBytes(_ bytes: UInt64) -> String {
     return "\(bytes) B"
 }
 
-struct Card<Content: View>: View {
+struct Card<Content: View, Graph: View>: View {
     let title: String
     var menuBarPin: Binding<Bool>? = nil   // when set, a switch in the title promotes the card to the menu bar
     @ViewBuilder var content: Content
+    /// Optional graph pinned to the card's bottom edge. It is drawn as a bottom OVERLAY, i.e.
+    /// out of the normal layout flow: it cannot push the flowing content taller (that is what
+    /// caused the old Spacer + maxHeight overflow that spilled the graph behind the next card),
+    /// and because sibling cards in a fixed-height row share the same bounds, their graphs land
+    /// on the SAME baseline regardless of how many Bars sit above. Graphless cards omit it.
+    @ViewBuilder var graph: Graph
+
+    init(title: String, menuBarPin: Binding<Bool>? = nil,
+         @ViewBuilder content: () -> Content,
+         @ViewBuilder graph: () -> Graph) {
+        self.title = title
+        self.menuBarPin = menuBarPin
+        self.content = content()
+        self.graph = graph()
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Text(title.uppercased())
                     .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
@@ -120,14 +135,31 @@ struct Card<Content: View>: View {
                 Spacer(minLength: 0)
                 if let pin = menuBarPin { MenuBarPin(isOn: pin) }
             }
+            // Rows flow top-down at natural height. Any trailing graph is NOT in this stack —
+            // it is the bottom overlay below — so it can never grow content past the row height.
             content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding(.horizontal, 9)
-        .padding(.vertical, 5)
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Bottom-pinned graph: full width, fixed (Sparkline) height, lifted 6pt off the edge.
+        .overlay(alignment: .bottom) {
+            graph
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 9)
+                .padding(.bottom, 6)
+        }
         .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9))
         .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.border, lineWidth: 1))
+        // Clip last so the chart's area gradient respects the rounded corners.
+        .clipShape(RoundedRectangle(cornerRadius: 9))
+    }
+}
+
+extension Card where Graph == EmptyView {
+    /// Graphless card (most cards): keeps existing `Card(title:) { ... }` call sites working.
+    init(title: String, menuBarPin: Binding<Bool>? = nil, @ViewBuilder content: () -> Content) {
+        self.init(title: title, menuBarPin: menuBarPin, content: content, graph: { EmptyView() })
     }
 }
 
@@ -140,7 +172,7 @@ struct Bar: View {
     var color: Color? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Text(label)
                     .font(.system(size: 11, design: .monospaced))

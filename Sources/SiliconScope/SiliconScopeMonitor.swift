@@ -24,6 +24,7 @@ final class SiliconScopeMonitor {
         var pCPU: [Double] = []        // 0...1
         var eCPU: [Double] = []        // 0...1
         var gpu: [Double] = []         // 0...1
+        var gpuMem: [Double] = []      // 0...1 (GPU in-use memory / total unified memory)
         var ane: [Double] = []         // Watts
         var media: [Double] = []       // GB/s (Media Engine)
         var bandwidth: [Double] = []   // GB/s
@@ -40,6 +41,7 @@ final class SiliconScopeMonitor {
             roll(&pCPU, s.cpu.pUsage)
             roll(&eCPU, s.cpu.eUsage)
             roll(&gpu, s.gpu.usage)
+            roll(&gpuMem, s.gpu.inUseMemoryFraction)
             roll(&ane, s.power.aneWatts)
             roll(&media, s.bandwidth.mediaGBs)
             roll(&bandwidth, s.bandwidth.totalGBs)

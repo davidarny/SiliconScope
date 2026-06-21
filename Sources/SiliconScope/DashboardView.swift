@@ -26,36 +26,38 @@ struct DashboardView: View {
 
                 HeaderView(topology: monitor.topology, power: snapshot.power, battery: snapshot.battery)
 
-                AIWorkloadCard(bottleneck: monitor.bottleneck,
-                               gpu: snapshot.gpu,
-                               bandwidth: snapshot.bandwidth,
-                               ceilingGBs: monitor.bandwidthCeilingGBs,
-                               chipName: monitor.topology?.chipName ?? "",
-                               engineHint: snapshot.likelyAIEngine,
-                               clockDropFraction: monitor.gpuClockDropFraction)
-                    .frame(height: 76)
-
-                AIRuntimeCard(runtime: snapshot.aiRuntime,
-                              api: snapshot.runtimeAPI,
-                              budget: snapshot.memoryBudget,
-                              memoryRisk: monitor.memoryRisk,
-                              cpuOffloadLikely: snapshot.aiCPUOffloadLikely,
-                              likelyEngine: snapshot.likelyAIEngine,
-                              isBenchmarking: monitor.isBenchmarking,
-                              benchmark: monitor.benchmarkForCurrentModel,
-                              benchmarkError: monitor.benchmarkError,
-                              onBenchmark: { Task { await monitor.runBenchmark() } })
-                    .frame(height: 106)
+                // AI cockpit pair, side by side (matches the rest of the 2-column grid and
+                // saves a stacked row of vertical space).
+                HStack(alignment: .top, spacing: 6) {
+                    AIWorkloadCard(bottleneck: monitor.bottleneck,
+                                   gpu: snapshot.gpu,
+                                   bandwidth: snapshot.bandwidth,
+                                   ceilingGBs: monitor.bandwidthCeilingGBs,
+                                   chipName: monitor.topology?.chipName ?? "",
+                                   engineHint: snapshot.likelyAIEngine,
+                                   clockDropFraction: monitor.gpuClockDropFraction)
+                    AIRuntimeCard(runtime: snapshot.aiRuntime,
+                                  api: snapshot.runtimeAPI,
+                                  budget: snapshot.memoryBudget,
+                                  memoryRisk: monitor.memoryRisk,
+                                  cpuOffloadLikely: snapshot.aiCPUOffloadLikely,
+                                  likelyEngine: snapshot.likelyAIEngine,
+                                  isBenchmarking: monitor.isBenchmarking,
+                                  benchmark: monitor.benchmarkForCurrentModel,
+                                  benchmarkError: monitor.benchmarkError,
+                                  onBenchmark: { Task { await monitor.runBenchmark() } })
+                }
+                .frame(height: 108)
 
                 HStack(spacing: 6) {
                     CPUCard(cpu: snapshot.cpu, topology: monitor.topology,
                             eHistory: monitor.history.eCPU, pHistory: monitor.history.pCPU)
                     AcceleratorCard(gpu: snapshot.gpu, power: snapshot.power, bandwidth: snapshot.bandwidth,
                                     anePeak: monitor.anePeakWatts, mediaPeak: monitor.mediaPeakGBs,
-                                    gpuHistory: monitor.history.gpu, mediaHistory: monitor.history.media,
-                                    aneHistory: monitor.history.ane)
+                                    gpuHistory: monitor.history.gpu, gpuMemHistory: monitor.history.gpuMem,
+                                    mediaHistory: monitor.history.media, aneHistory: monitor.history.ane)
                 }
-                .frame(height: 140)
+                .frame(height: 166)
 
                 HStack(alignment: .top, spacing: 6) {
                     MemoryBandwidthCard(memory: snapshot.memory, bandwidth: snapshot.bandwidth,
@@ -185,8 +187,8 @@ private struct AIWorkloadCard: View {
                 }
                 Bar(label: "Mem BW % of ceiling",
                     value: bwFraction,
-                    detail: String(format: "%.0f%% · %.0f / %.0f GB/s · %@",
-                                   bwFraction * 100, bandwidth.totalGBs, ceilingGBs, shortChip))
+                    detail: String(format: "%.0f%% · %.0f / %.0f GB/s",
+                                   bwFraction * 100, bandwidth.totalGBs, ceilingGBs))
                 HStack(spacing: 6) {
                     Text(String(format: "GPU %.0f%%", gpu.usagePercent))
                         .font(.system(size: 10.5, weight: .medium, design: .monospaced))
@@ -430,8 +432,7 @@ private struct CPUCard: View {
                 detail: String(format: "%.0f%%  %.0f MHz", cpu.eUsagePercent, cpu.eFreqMHz), color: eColor)
             Bar(label: "P-cores", value: cpu.pUsage,
                 detail: String(format: "%.0f%%  %.0f MHz", cpu.pUsagePercent, cpu.pFreqMHz), color: pColor)
-            Spacer(minLength: 2)
-            GraphCaption("E (amber) / P (blue) usage · 60s")
+        } graph: {
             ZStack {
                 Sparkline(values: eHistory, color: eColor, height: 24, yDomain: 0...1)
                 Sparkline(values: pHistory, color: pColor, height: 24, yDomain: 0...1)
@@ -447,11 +448,13 @@ private struct AcceleratorCard: View {
     let anePeak: Double
     let mediaPeak: Double
     let gpuHistory: [Double]
+    let gpuMemHistory: [Double]
     let mediaHistory: [Double]
     let aneHistory: [Double]
     @AppStorage("menubar.gpu") private var gpuMB = false
 
     private let gpuColor = MetricPalette.gpuC       // green
+    private let memColor = MetricPalette.gpuMemC    // sky cyan — GPU memory
     private let mediaColor = MetricPalette.mediaC   // orange
     private let aneColor = MetricPalette.aneC       // purple
 
@@ -460,19 +463,20 @@ private struct AcceleratorCard: View {
             Bar(label: "GPU", value: gpu.usage,
                 detail: String(format: "%.0f%%  %.1f W  %.0f MHz", gpu.usagePercent, power.gpuWatts, gpu.freqMHz),
                 color: gpuColor)
-            Bar(label: "Media", value: min(1, bandwidth.mediaGBs / max(mediaPeak, 0.5)),
-                detail: String(format: "%.1f GB/s", bandwidth.mediaGBs), color: mediaColor)
+            Bar(label: "GPU memory", value: gpu.inUseMemoryFraction,
+                detail: String(format: "%.1f GB in use", gpu.inUseMemoryGB), color: memColor)
             Bar(label: "ANE est.", value: min(1, power.aneWatts / max(anePeak, 0.1)),
                 detail: String(format: "%.1f W", power.aneWatts), color: aneColor)
-            KV(key: "GPU memory", value: String(format: "%.1f GB in use", gpu.inUseMemoryGB))
-            Spacer(minLength: 2)
-            GraphCaption("GPU (green) / Media (orange) / ANE (purple) · 60s")
+            Bar(label: "Media", value: min(1, bandwidth.mediaGBs / max(mediaPeak, 0.5)),
+                detail: String(format: "%.1f GB/s", bandwidth.mediaGBs), color: mediaColor)
+        } graph: {
             ZStack {
                 Sparkline(values: gpuHistory, color: gpuColor, height: 24, yDomain: 0...1)
-                Sparkline(values: mediaHistory.map { min(1, $0 / max(mediaPeak, 0.5)) },
-                          color: mediaColor, height: 24, yDomain: 0...1)
+                Sparkline(values: gpuMemHistory, color: memColor, height: 24, yDomain: 0...1)
                 Sparkline(values: aneHistory.map { min(1, $0 / max(anePeak, 0.1)) },
                           color: aneColor, height: 24, yDomain: 0...1)
+                Sparkline(values: mediaHistory.map { min(1, $0 / max(mediaPeak, 0.5)) },
+                          color: mediaColor, height: 24, yDomain: 0...1)
             }
         }
     }
@@ -506,13 +510,14 @@ private struct MemoryBandwidthCard: View {
             HStack(alignment: .top, spacing: 10) {
                 memorySection.frame(maxWidth: .infinity, alignment: .leading)
                 Divider().overlay(Theme.border)
-                bandwidthSection.frame(maxWidth: .infinity, alignment: .leading)
+                bandwidthSection
             }
+            .frame(maxHeight: .infinity)   // fill the card so the bandwidth column can pin its graph to the bottom
         }
     }
 
     private var memorySection: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             SubLabel("Memory", menuBarPin: $memMB)
             HStack {
                 Text(String(format: "%.1f / %.0f GB", memory.usedGB, memory.totalGB))
@@ -547,13 +552,11 @@ private struct MemoryBandwidthCard: View {
             KV(key: "App Memory", value: String(format: "%.1f GB", memory.appMemoryGB))
             KV(key: "Cached", value: String(format: "%.1f GB", memory.cachedFilesGB))
             KV(key: "Swap", value: String(format: "%.1f GB", memory.swapUsedGB))
-            Spacer(minLength: 4)
-            Sparkline(values: memHistory, color: activeColor, height: 22)
         }
     }
 
     private var bandwidthSection: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             SubLabel("Bandwidth")
             Bar(label: "Total", value: min(1, bandwidth.totalGBs / max(bandwidthPeak, 1)),
                 detail: String(format: "%.0f GB/s", bandwidth.totalGBs))
@@ -561,8 +564,13 @@ private struct MemoryBandwidthCard: View {
             KV(key: "GPU", value: String(format: "%.0f GB/s", bandwidth.gpuGBs))
             KV(key: "Media", value: String(format: "%.0f GB/s", bandwidth.mediaGBs))
             KV(key: "Other", value: String(format: "%.0f GB/s", bandwidth.otherGBs))
-            Spacer(minLength: 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Bandwidth column keeps its graph (only the dense Memory column dropped its own),
+        // pinned to the bottom of this column via the same out-of-flow overlay technique.
+        .overlay(alignment: .bottom) {
             Sparkline(values: bwHistory, color: Color(red: 0.42, green: 0.66, blue: 0.95), height: 22)
+                .padding(.bottom, 6)
         }
     }
 }
@@ -593,7 +601,7 @@ private struct NetworkDiskCard: View {
     }
 
     private var networkSection: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             SubLabel("Network", menuBarPin: $netMB)
             KV(key: "↓ Download", value: formatRate(network.downloadBytesPerSec), valueColor: downColor)
             KV(key: "↑ Upload", value: formatRate(network.uploadBytesPerSec), valueColor: upColor)
@@ -604,7 +612,7 @@ private struct NetworkDiskCard: View {
     }
 
     private var diskSection: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             SubLabel("Disk", menuBarPin: $ssdMB)
             KV(key: "Read", value: formatRate(disk.readBytesPerSec), valueColor: downColor)
             KV(key: "Write", value: formatRate(disk.writeBytesPerSec), valueColor: upColor)

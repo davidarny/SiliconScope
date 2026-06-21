@@ -1,11 +1,23 @@
 # Changelog
 
-## v2.1.4 — 2026-06-21
+## v2.2.0 — 2026-06-21
 
-**GPU memory.** The GPU / Media / Neural card and dropdown now show the GPU's unified-memory
-footprint ("X.X GB in use"), read sudolessly from IOAccelerator. Apple Silicon has no hard
-CPU/GPU memory split (it's shared), but this surfaces how much the GPU itself is actively
-using — something Activity Monitor and the TUI monitors don't show.
+**GPU memory + an AI-cockpit cleanup.**
+
+- **GPU unified-memory footprint** — the GPU / Media / Neural card and dropdown now show how
+  much memory the GPU is actively using ("X.X GB in use"), read sudolessly from IOAccelerator.
+  Apple Silicon shares one memory pool with no hard CPU/GPU split, but this surfaces the GPU's
+  own footprint — something Activity Monitor and the TUI monitors don't show. It renders as a
+  meter bar in its own sky-cyan color alongside GPU / ANE / Media, and as a fourth line in the
+  overlaid 60-second history graph.
+- **AI cockpit, side by side** — the AI Workload and AI Runtime cards now share one row
+  (matching the rest of the 2-column grid) instead of being stacked, tightening the dashboard.
+- **Denser, calmer layout** — every menu-bar dropdown and the dashboard cards were tightened
+  to iStat-level row spacing.
+- **Card graphs realigned** — each card's history graph is now pinned to the card's bottom
+  edge, so graphs line up across a row regardless of how many bars sit above them and never
+  spill past the card (fixes a graph-overflow bug). The dense Memory column dropped its cramped
+  sparkline; Bandwidth keeps its graph.
 
 ## v2.1.3 — 2026-06-21
 
