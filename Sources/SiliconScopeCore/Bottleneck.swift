@@ -1,7 +1,7 @@
 //
 //  File:      Bottleneck.swift
 //  Created:   2026-06-12
-//  Updated:   2026-06-16
+//  Updated:   2026-06-21
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  The AI-workload bottleneck classifier (hero feature). Given a snapshot,
 //             the unified-memory-bandwidth ceiling, and whether the GPU is throttling,
@@ -125,6 +125,15 @@ public enum Bottleneck: String, Sendable {
             if has("max")   { return pCoreCount >= 12 ? 546 : 410 }   // full vs binned
             if has("pro")   { return 273 }
             return 120
+        }
+        if has("m5") {
+            // M5 Max binned (32-core GPU) is 460 GB/s vs the full 40-core 614, but both share
+            // the same CPU config (18-core: 6 super + 12 perf), so pCoreCount can't disambiguate
+            // here — use the full 614 and let the observed-peak fallback cover the binned case.
+            if has("ultra") { return 0 }   // no M5 Ultra yet → observed peak
+            if has("max")   { return 614 }
+            if has("pro")   { return 307 }
+            return 153
         }
         return 0   // unknown → caller uses observed peak
     }

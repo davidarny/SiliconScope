@@ -108,6 +108,14 @@ final class BottleneckTests: XCTestCase {
         XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M4 Max", pCoreCount: 10), 410)
     }
 
+    func testCeilingM5() {
+        XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M5", pCoreCount: 4), 153)
+        XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M5 Pro", pCoreCount: 12), 307)
+        XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M5 Max", pCoreCount: 12), 614)
+        // No M5 Ultra yet → 0 (caller falls back to the observed peak).
+        XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M5 Ultra", pCoreCount: 16), 0)
+    }
+
     func testCeilingUnknownChipIsZero() {
         XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Apple M9 Ultra", pCoreCount: 99), 0)
         XCTAssertEqual(Bottleneck.bandwidthCeilingGBs(chipName: "Intel Core i9", pCoreCount: 8), 0)
