@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.2.3 — 2026-06-21
+## v2.2.3 — 2026-06-22
 
 Sensors: **a fuller temperature panel on partially-mapped chips (e.g. M4 Max).** When a die
 exposes only a subset of its generation's curated SMC keys — M4 Max, for instance, reads back no
@@ -8,6 +8,10 @@ Memory key — SiliconScope now fills the intended-but-absent category from the 
 instead of leaving it blank. Per-core readings the chip genuinely doesn't expose are never
 fabricated, and fully-mapped chips (M1–M3) are untouched, with no extra cost. Follows up the M4
 Max report (#6).
+
+Also adds a contributor diagnostic, `sscope-cli --power-debug`, which dumps every IOReport power
+channel across all groups so non-M1 users can report where a rail lives on their chip (e.g.
+whether ANE power sits in `Energy Model` or `PMP` on M2). Follows up #11.
 
 ## v2.2.2 — 2026-06-21
 

@@ -1,7 +1,7 @@
 //
 //  File:      PowerSampler.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-08
+//  Updated:   2026-06-22
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  Reads per-domain SoC power (CPU E/P, GPU, ANE, DRAM) sudolessly via
 //             the private IOReport framework. Subscribes once, then each sample()
@@ -86,5 +86,48 @@ public final class PowerSampler {
             return Int32(kKtopIOReportIterOk)
         }
         return result
+    }
+
+    /// Diagnostic dump of every IOReport "Simple" (energy) channel across ALL groups —
+    /// `[group] (subgroup) name = W (raw)` — so contributors on unverified chips can report
+    /// exactly where a rail is exposed. Motivating case: ANE power on M2 may sit in the "PMP"
+    /// group rather than "Energy Model" (which is all `sample()` scans). Surfaced by
+    /// `sscope-cli --power-debug`. One line per channel, sorted so groups cluster.
+    public static func channelDump(interval: TimeInterval = 0.3) -> [String] {
+        guard let all = IOReportCopyAllChannels(0, 0)?.takeRetainedValue() else {
+            return ["IOReport unavailable (non-Apple-Silicon?)"]
+        }
+        var subbed: Unmanaged<CFMutableDictionary>?
+        guard let sub = IOReportCreateSubscription(nil, all, &subbed, 0, nil),
+              let channels = subbed?.takeRetainedValue() else {
+            return ["IOReport subscription failed"]
+        }
+        let first = IOReportCreateSamples(sub, channels, nil)
+        Thread.sleep(forTimeInterval: interval)
+        let second = IOReportCreateSamples(sub, channels, nil)
+        guard let a = first?.takeRetainedValue(), let b = second?.takeRetainedValue(),
+              let delta = IOReportCreateSamplesDelta(a, b, nil)?.takeRetainedValue() else {
+            return ["IOReport sampling failed"]
+        }
+        let seconds = max(interval, 0.001)
+
+        var lines: [String] = []
+        IOReportIterate(delta) { channel in
+            guard IOReportChannelGetFormat(channel) == kKtopIOReportFormatSimple,
+                  let groupRef = IOReportChannelGetGroup(channel)?.takeUnretainedValue(),
+                  let nameRef = IOReportChannelGetChannelName(channel)?.takeUnretainedValue()
+            else {
+                return Int32(kKtopIOReportIterOk)
+            }
+            let group = groupRef as String
+            let name = nameRef as String
+            let subgroup = (IOReportChannelGetSubGroup(channel)?.takeUnretainedValue() as String?) ?? ""
+            let raw = IOReportSimpleGetIntegerValue(channel, 0)
+            let watts = Double(raw) / seconds / 1000.0   // Energy Model is mJ; other groups may differ
+            let sg = subgroup.isEmpty ? "" : " (\(subgroup))"
+            lines.append("[\(group)]\(sg) \(name) = \(String(format: "%.3f", watts)) W  (raw \(raw))")
+            return Int32(kKtopIOReportIterOk)
+        }
+        return lines.sorted()
     }
 }

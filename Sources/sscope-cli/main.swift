@@ -149,3 +149,15 @@ if CommandLine.arguments.contains("--sensors") {
     for s in hid { print(String(format: "  %-26@ %5.1f C", s.name as NSString, s.celsius)) }
     print("\nMac model: run `sysctl hw.model machdep.cpu.brand_string` and include it.")
 }
+
+// Power-channel dump for verifying / contributing per-chip power rails (e.g. where ANE power
+// is exposed on M2). Run: sscope-cli --power-debug   (paste the output into a power issue).
+if CommandLine.arguments.contains("--power-debug") {
+    let lines = PowerSampler.channelDump()
+    print("\n=== IOReport power channels (all groups, energy/Simple format) — \(lines.count) ===")
+    print("Grep for ANE/Neural here. SiliconScope's aneWatts currently reads only the")
+    print("\"Energy Model\" group; if ANE power shows up under another group (e.g. PMP), that")
+    print("explains a 0 reading. Tip: run a webcam app (Photo Booth) to actually exercise the ANE.")
+    for l in lines { print("  \(l)") }
+    print("\nMac model: run `sysctl hw.model machdep.cpu.brand_string` and include it.")
+}
