@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.3 — 2026-06-21
+
+Discoverability: a **Menu bar items** section in Settings lets you toggle CPU / GPU / Memory /
+Network / SSD / Sensors / Battery as individual menu-bar items — the same controls as the ⬚
+pin on each dashboard card, now easy to find (the per-card pin stayed too subtle to discover).
+
 ## v2.1.2 — 2026-06-21
 
 Added the **M5 generation** to the memory-bandwidth ceiling table — M5 153 / M5 Pro 307 /

@@ -28,7 +28,7 @@ export const STRINGS = {
     ],
     gallery: {
       title: 'Pin any metric to its own item',
-      sub: 'CPU · GPU · Memory · Network · SSD · Sensors · Battery — each with a live glyph and a rich, iStat-style dropdown.',
+      sub: 'CPU · GPU · Memory · Network · SSD · Sensors · Battery — each with a live glyph and a rich, iStat-style dropdown. Toggle any of them from the ⬚ on its dashboard card (or in Settings).',
       items: [
         { img: '/img/cpu.png', label: 'CPU — E/P cores, frequency, temp, top processes' },
         { img: '/img/memory.png', label: 'Memory — pressure, app/cached, swap, page rates' },
@@ -64,7 +64,7 @@ export const STRINGS = {
     ],
     gallery: {
       title: '지표마다, 저마다의 자리',
-      sub: 'CPU·GPU·메모리·네트워크·SSD·센서·배터리 — 무엇이든 메뉴바에 띄우고, 풍부한 드롭다운으로 깊이 들여다봅니다.',
+      sub: 'CPU·GPU·메모리·네트워크·SSD·센서·배터리 — 무엇이든 메뉴바에 띄우고, 풍부한 드롭다운으로 깊이 들여다봅니다. 각 카드의 ⬚(또는 설정)에서 켜고 끕니다.',
       items: [
         { img: '/img/cpu.png', label: 'CPU — E/P 코어, 주파수, 온도, 상위 프로세스' },
         { img: '/img/memory.png', label: '메모리 — 압력, App/캐시, 스왑, 페이지 속도' },
