@@ -1,7 +1,7 @@
 //
 //  File:      MenuBarMetric.swift
 //  Created:   2026-06-19
-//  Updated:   2026-06-19
+//  Updated:   2026-06-21
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  iStat-style per-metric menu-bar items. Each dashboard card can be toggled
 //             into its own menu-bar item (a stacked label + a mini histogram or two-line
@@ -386,9 +386,7 @@ struct CPUMenuDropdown: View {
                 }
             }
             Divider()
-            Button { openMainDashboard() } label: {
-                Label("Open Dashboard", systemImage: "macwindow").frame(maxWidth: .infinity)
-            }
+            OpenDashboardButton()
         }
         .padding(12).frame(width: 260).background(Theme.bg).foregroundStyle(Theme.text)
     }
@@ -437,11 +435,14 @@ struct MenuBarPin: View {
     }
 }
 
+/// The single primary action shared by every per-metric dropdown — styled to match the
+/// combined popover's Open Dashboard button.
 struct OpenDashboardButton: View {
     var body: some View {
         Button { openMainDashboard() } label: {
-            Label("Open Dashboard", systemImage: "macwindow").frame(maxWidth: .infinity)
+            Label("Open Dashboard", systemImage: "macwindow")
         }
+        .buttonStyle(PopoverButtonStyle(prominent: true))
     }
 }
 

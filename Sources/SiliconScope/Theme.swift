@@ -1,9 +1,10 @@
 //
 //  File:      Theme.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-12
+//  Updated:   2026-06-21
 //  Developer: Kennt Kim / Calida Lab
-//  Overview:  Shared visual language and reusable UI atoms (Card, Bar, KV, Sparkline).
+//  Overview:  Shared visual language and reusable UI atoms (Card, Bar, KV, Sparkline,
+//             PopoverButtonStyle).
 //             Restrained instrument-panel look: one accent, muted heat colors, dense
 //             monospaced typography. All in-app text is English.
 //  Notes:     Theme.heat(fraction) maps 0...1 load to green/amber/red. Cards are
@@ -238,6 +239,51 @@ struct Sparkline: View {
             chart.chartYScale(domain: yDomain)
         } else {
             chart
+        }
+    }
+}
+
+/// Popover footer button styled to match the cards: rounded panel fill, hairline border,
+/// monospaced label, uniform 28pt height, with hover + press feedback. `prominent` adds a
+/// subtle accent tint + outline for the single primary action (Open Dashboard); the others
+/// stay neutral so the hierarchy reads at a glance. Shared by the combined popover and each
+/// per-metric dropdown so every menu-bar surface uses the same buttons.
+struct PopoverButtonStyle: ButtonStyle {
+    var prominent = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        StyleBody(configuration: configuration, prominent: prominent)
+    }
+
+    private struct StyleBody: View {
+        let configuration: Configuration
+        let prominent: Bool
+        @State private var hovering = false
+
+        var body: some View {
+            let pressed = configuration.isPressed
+            configuration.label
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(Theme.text)
+                .frame(maxWidth: .infinity)
+                .frame(height: 28)
+                .background(fill(pressed: pressed), in: RoundedRectangle(cornerRadius: 7))
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(stroke, lineWidth: 1))
+                .contentShape(RoundedRectangle(cornerRadius: 7))
+                .onHover { hovering = $0 }
+                .animation(.easeOut(duration: 0.12), value: hovering)
+                .animation(.easeOut(duration: 0.12), value: pressed)
+        }
+
+        private func fill(pressed: Bool) -> Color {
+            if prominent {
+                return Theme.accent.opacity(pressed ? 0.34 : hovering ? 0.26 : 0.18)
+            }
+            return Color.white.opacity(pressed ? 0.14 : hovering ? 0.10 : 0.05)
+        }
+
+        private var stroke: Color {
+            prominent ? Theme.accent.opacity(0.55) : Theme.border
         }
     }
 }

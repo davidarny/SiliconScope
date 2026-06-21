@@ -1,7 +1,7 @@
 //
 //  File:      MenuBarView.swift
 //  Created:   2026-06-08
-//  Updated:   2026-06-16
+//  Updated:   2026-06-21
 //  Developer: Kennt Kim / Calida Lab
 //  Overview:  Compact menu-bar popover content: the essentials at a glance (E/P, mem,
 //             GPU, bandwidth, power, die temp), trend sparklines, top processes, plus
@@ -32,22 +32,26 @@ struct MenuBarView: View {
             }
 
             Divider()
-            Button {
-                openWindow(id: "siliconscope-main")
-                NSApplication.shared.activate(ignoringOtherApps: true)
-            } label: {
-                Label("Open Dashboard", systemImage: "macwindow")
-                    .frame(maxWidth: .infinity)
-            }
-            HStack {
-                Button("Settings…") { openSettings() }
-                if UpdaterController.shared.canCheck {
-                    Button("Check for Updates…") { UpdaterController.shared.checkForUpdates() }
+                .padding(.bottom, 2)
+            // One full-width primary action, then two equal-width secondary buttons — all
+            // share PopoverButtonStyle so they match the cards (panel fill, hairline border,
+            // mono label) at a uniform height. "Check for Updates…" lives in Settings.
+            VStack(spacing: 7) {
+                Button {
+                    openWindow(id: "siliconscope-main")
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                } label: {
+                    Label("Open Dashboard", systemImage: "macwindow")
                 }
-                Spacer()
-                Button("Quit") { NSApplication.shared.terminate(nil) }
+                .buttonStyle(PopoverButtonStyle(prominent: true))
+
+                HStack(spacing: 7) {
+                    Button("Settings") { openSettings() }
+                        .buttonStyle(PopoverButtonStyle())
+                    Button("Quit") { NSApplication.shared.terminate(nil) }
+                        .buttonStyle(PopoverButtonStyle())
+                }
             }
-            .font(.system(size: 12))
         }
         .padding(14)
         .frame(width: compactGPU ? 340 : 270)
